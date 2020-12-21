@@ -1,7 +1,6 @@
 package com.example.touchdispeargame;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.os.Handler;
@@ -10,22 +9,16 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
-import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.Constraints;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Random;
 
 public class TouchView extends ConstraintLayout {
@@ -35,7 +28,7 @@ public class TouchView extends ConstraintLayout {
 
     private ArrayList<Integer> indexRecorderArray;
 
-    private float maxRightX, maxBottomY, firstLineY, singleWidth, singleHeight;
+    private float maxRightX, maxBottomY, singleWidth, singleHeight;
 
     private ImageView ivIcon;
 
@@ -62,7 +55,9 @@ public class TouchView extends ConstraintLayout {
 
     private static final String LIGHT_TAG = "light";
 
-    private int iconIndex = 0;
+    private float x = 0, y = 0;
+
+    private boolean isCalculating;
 
     private View itemView;
 
@@ -119,7 +114,6 @@ public class TouchView extends ConstraintLayout {
 
             singleWidth = maxRightX / 5;
             singleHeight = middleScreenY / 5;
-            firstLineY = middleScreenY;
             rootView.removeAllViews();
             itemDataArray = new ArrayList<>();
 
@@ -203,14 +197,19 @@ public class TouchView extends ConstraintLayout {
         }
     };
 
-    private float x = 0, y = 0;
+
 
 
     //先測試第一排固定住
+    @SuppressLint("ClickableViewAccessibility")
     private OnTouchListener handleOnTouchListener(final ConstraintLayout itemRoot) {
         return new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+
+                if (isCalculating){
+                    return false;
+                }
 
                 if (v.getId() == itemRoot.getId()) {
                     switch (event.getAction()) {
@@ -220,6 +219,7 @@ public class TouchView extends ConstraintLayout {
                             MichaelLog.i("x : " + x + " , y : " + y);
                             break;
                         case MotionEvent.ACTION_MOVE:
+
                             float moveX = event.getRawX() + x;
                             float moveY = event.getRawY() + y;
                             v.animate().x(moveX)
@@ -227,19 +227,20 @@ public class TouchView extends ConstraintLayout {
                                     .setDuration(0)
                                     .start();
 
-
                             MichaelLog.i("移動x : " + (event.getRawX() + x) + " , y : " + (event.getRawY() + y));
 
                             //在移動的同時也判斷是否要換方格
                             checkNeedToMove(moveX, moveY, itemRoot.getId());
                             break;
                         case MotionEvent.ACTION_UP:
-                            MichaelLog.i("action Up");
+                            MichaelLog.i("action Up 開始計算");
+                            isCalculating = true;
+
                             int currentId = itemRoot.getId();
                             v.animate().x(itemDataArray.get(currentId - 1).getLeftX()).y(itemDataArray.get(currentId - 1).getTopY()).setDuration(0).start();
 
                             //開始執行消除
-                            handler.postDelayed(checkDisappearRunnable, 500);
+                            handler.postDelayed(checkDisappearRunnable, 100);
 
                             break;
                         default:
@@ -300,7 +301,6 @@ public class TouchView extends ConstraintLayout {
             if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24) {
                 continue;
             }
-
             int firstIndex = i + 1;
             int secondIndex = i + 2;
             int thirdIndex = i + 3;
@@ -327,7 +327,6 @@ public class TouchView extends ConstraintLayout {
 
         //再來是三格以上的,先找直排
         for (int i = 0; i < 15; i++) {
-
             int firstIndex = i + 5;
             int secondIndex = i + 10;
             int thirdIndex = i + 15;
@@ -351,7 +350,7 @@ public class TouchView extends ConstraintLayout {
         }
 
 
-        handler.postDelayed(addRandomView, 500);
+        handler.postDelayed(addRandomView, 50);
 
 
     }
@@ -389,6 +388,7 @@ public class TouchView extends ConstraintLayout {
     //長出來
     private void doAddRandomView() {
         if (indexRecorderArray.isEmpty()) {
+            isCalculating = false;
             MichaelLog.i("找不到相同的珠子不消除");
             return;
         }
@@ -473,22 +473,22 @@ public class TouchView extends ConstraintLayout {
             }
 
             if (isFoundFourthSpace){
-                MichaelLog.i("isFoundFourthSpace : "+isFoundFourthSpace);
+
                 switchItem(restIndex,lastIndex);
                 continue;
             }
             if (isFoundThirdSpace){
-                MichaelLog.i("isFoundThirdSpace : "+isFoundThirdSpace);
+
                 switchItem(restIndex,lastIndex);
                 continue;
             }
             if (isFoundSecondSpace){
-                MichaelLog.i("isFoundSecondSpace : "+isFoundSecondSpace);
+
                 switchItem(restIndex,lastIndex);
                 continue;
             }
             if (isFoundFirstSpace){
-                MichaelLog.i("isFoundFirstSpace : "+isFoundFirstSpace);
+
                 switchItem(restIndex,lastIndex);
             }
         }
