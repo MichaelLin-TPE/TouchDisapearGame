@@ -110,10 +110,11 @@ public class TouchView extends ConstraintLayout {
             maxBottomY = rootView.getBottom();
             maxRightX = rootView.getRight();
 
-            final float middleScreenY = maxBottomY / 2;
+
 
             singleWidth = maxRightX / 5;
-            singleHeight = middleScreenY / 5;
+            singleHeight = maxRightX / 5;
+            final float middleScreenY = maxBottomY - (singleHeight * 5);
             rootView.removeAllViews();
             itemDataArray = new ArrayList<>();
 
@@ -240,7 +241,7 @@ public class TouchView extends ConstraintLayout {
                             v.animate().x(itemDataArray.get(currentId - 1).getLeftX()).y(itemDataArray.get(currentId - 1).getTopY()).setDuration(0).start();
 
                             //開始執行消除
-                            handler.postDelayed(checkDisappearRunnable, 100);
+                            handler.postDelayed(checkDisappearRunnable, 200);
 
                             break;
                         default:
@@ -516,7 +517,7 @@ public class TouchView extends ConstraintLayout {
                 itemDataArray.get(index).getItemRoot().startAnimation(animation);
 
             }
-            handler.postDelayed(checkAgainDisappearRunnable,1000);
+            handler.postDelayed(checkAgainDisappearRunnable,250);
         }
     };
 
