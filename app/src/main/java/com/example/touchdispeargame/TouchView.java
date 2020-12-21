@@ -10,6 +10,9 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -20,6 +23,7 @@ import androidx.constraintlayout.widget.Constraints;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
@@ -46,6 +50,8 @@ public class TouchView extends ConstraintLayout {
 
     private static final int DARK = 3;
 
+    private static final int LIGHT = 4;
+
     private static final String FIRE_TAG = "fire";
 
     private static final String WATER_TAG = "water";
@@ -53,6 +59,8 @@ public class TouchView extends ConstraintLayout {
     private static final String GREEN_TAG = "green";
 
     private static final String DARK_TAG = "dark";
+
+    private static final String LIGHT_TAG = "light";
 
     private int iconIndex = 0;
 
@@ -92,6 +100,7 @@ public class TouchView extends ConstraintLayout {
         iconArray.add(R.drawable.water);
         iconArray.add(R.drawable.green);
         iconArray.add(R.drawable.dark);
+        iconArray.add(R.drawable.light);
         return iconArray;
     }
 
@@ -288,14 +297,14 @@ public class TouchView extends ConstraintLayout {
 
         //再來是三格以上的,先找橫排
         for (int i = 0; i < 25; i++) {
-            if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24){
+            if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24) {
                 continue;
             }
 
             int firstIndex = i + 1;
             int secondIndex = i + 2;
             int thirdIndex = i + 3;
-            if (firstIndex > 24 || secondIndex > 24){
+            if (firstIndex > 24 || secondIndex > 24) {
                 break;
             }
             String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
@@ -325,7 +334,7 @@ public class TouchView extends ConstraintLayout {
             String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
             String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
             String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
-            String thirdTag = thirdIndex > 24  ? "" : (String)itemDataArray.get(thirdIndex).getItemRoot().getTag();
+            String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
             if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
                 indexRecorderArray.add(i);
                 indexRecorderArray.add(firstIndex);
@@ -333,6 +342,7 @@ public class TouchView extends ConstraintLayout {
                 rootView.removeView(itemDataArray.get(i).getItemRoot());
                 rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
                 rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
+
             }
             if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
                 indexRecorderArray.add(thirdIndex);
@@ -369,6 +379,9 @@ public class TouchView extends ConstraintLayout {
             case DARK:
                 tag = DARK_TAG;
                 break;
+            case LIGHT:
+                tag = LIGHT_TAG;
+                break;
         }
         return tag;
     }
@@ -394,14 +407,176 @@ public class TouchView extends ConstraintLayout {
                 }
             }
         }
-
-        for (Integer index : indexRecorderArray) {
-
-            int randomIndex = random.nextInt(getIconArray().size());
-            itemDataArray.get(index).getIvIcon().setImageResource(getIconArray().get(randomIndex));
-            itemDataArray.get(index).getItemRoot().setTag(getItemTag(randomIndex));
-            rootView.addView(itemDataArray.get(index).getItemRoot());
+        //這邊要想辦法讓剩餘的珠子往下掉下來
+        ArrayList<Integer> restIndexArray = new ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            boolean isFoundRestItem = true;
+            for (Integer index : indexRecorderArray) {
+                if (index == i) {
+                    isFoundRestItem = false;
+                    break;
+                }
+            }
+            if (isFoundRestItem) {
+                restIndexArray.add(i);
+            }
         }
+
+
+        Collections.sort(restIndexArray, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+
+                if (o1 > o2) {
+                    return -1;
+                }
+                return 1;
+            }
+        });
+        Collections.sort(indexRecorderArray);
+
+        for (Integer restIndex : restIndexArray) {
+            MichaelLog.i("restIndex : " + restIndex);
+
+            int firstLineIndex = restIndex + 5;
+            int secondLineIndex = restIndex + 10;
+            int thirdLineIndex = restIndex + 15;
+            int fourthLineIndex = restIndex + 20;
+
+            boolean isFoundFirstSpace = false;
+            boolean isFoundSecondSpace = false;
+            boolean isFoundThirdSpace = false;
+            boolean isFoundFourthSpace = false;
+            int lastIndex = 0;
+            if (firstLineIndex >= 24){
+                continue;
+            }
+
+            for (Integer spaceIndex : indexRecorderArray) {
+                if (firstLineIndex == spaceIndex){
+                    lastIndex = spaceIndex;
+                    isFoundFirstSpace = true;
+                }
+                if (secondLineIndex == spaceIndex){
+                    lastIndex = spaceIndex;
+                    isFoundSecondSpace = true;
+                }
+                if (thirdLineIndex == spaceIndex){
+                    lastIndex = spaceIndex;
+                    isFoundThirdSpace = true;
+                }
+                if (fourthLineIndex == spaceIndex){
+                    MichaelLog.i("fourthLineIndex : "+fourthLineIndex + " , spaceIndex : "+spaceIndex);
+                    lastIndex = spaceIndex;
+                    isFoundFourthSpace = true;
+                }
+            }
+
+            if (isFoundFourthSpace){
+                MichaelLog.i("isFoundFourthSpace : "+isFoundFourthSpace);
+                switchItem(restIndex,lastIndex);
+                continue;
+            }
+            if (isFoundThirdSpace){
+                MichaelLog.i("isFoundThirdSpace : "+isFoundThirdSpace);
+                switchItem(restIndex,lastIndex);
+                continue;
+            }
+            if (isFoundSecondSpace){
+                MichaelLog.i("isFoundSecondSpace : "+isFoundSecondSpace);
+                switchItem(restIndex,lastIndex);
+                continue;
+            }
+            if (isFoundFirstSpace){
+                MichaelLog.i("isFoundFirstSpace : "+isFoundFirstSpace);
+                switchItem(restIndex,lastIndex);
+            }
+        }
+
+        handler.postDelayed(addViewRunnable,1000);
+
+    }
+
+    private Runnable addViewRunnable = new Runnable() {
+        @Override
+        public void run() {
+            for (Integer index : indexRecorderArray) {
+                MichaelLog.i("num : "+index);
+                int randomIndex = random.nextInt(getIconArray().size());
+                itemDataArray.get(index).getIvIcon().setImageResource(getIconArray().get(randomIndex));
+                itemDataArray.get(index).getItemRoot().setTag(getItemTag(randomIndex));
+                rootView.addView(itemDataArray.get(index).getItemRoot(),index);
+
+//                AlphaAnimation alphaAnimation = new AlphaAnimation(0.2f,1.0f);
+//                alphaAnimation.setDuration(500);
+//                itemDataArray.get(index).getItemRoot().startAnimation(alphaAnimation);
+
+                TranslateAnimation animation = new TranslateAnimation(0f,0f,-400f,0f);
+                animation.setDuration(250);
+                itemDataArray.get(index).getItemRoot().startAnimation(animation);
+
+            }
+            handler.postDelayed(checkAgainDisappearRunnable,1000);
+        }
+    };
+
+    private Runnable checkAgainDisappearRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkDisappearItem();
+        }
+    };
+
+
+    private void switchItem(Integer restIndex, int lastIndex) {
+
+        ItemData currentItem = itemDataArray.get(restIndex);
+
+        itemDataArray.get(lastIndex).getItemRoot().setTag(currentItem.getItemRoot().getTag());
+        itemDataArray.get(lastIndex).getIvIcon().setImageResource(getTagIcon((String) currentItem.getItemRoot().getTag()));
+
+        rootView.removeView(itemDataArray.get(restIndex).getItemRoot());
+        rootView.addView(itemDataArray.get(lastIndex).getItemRoot());
+
+        TranslateAnimation animation = new TranslateAnimation(0f,0f,-200f,0f);
+        animation.setDuration(200);
+        itemDataArray.get(lastIndex).getItemRoot().startAnimation(animation);
+
+        int index = 0;
+
+        for (int i = 0 ; i < indexRecorderArray.size() ; i ++){
+            if (lastIndex == indexRecorderArray.get(i)){
+                index = i;
+                break;
+            }
+        }
+
+        indexRecorderArray.remove(index);
+        indexRecorderArray.add(restIndex);
+        Collections.sort(indexRecorderArray);
+    }
+
+    private int getTagIcon(String tag) {
+        int iconId = 0;
+
+        switch (tag){
+            case GREEN_TAG:
+                iconId = R.drawable.green;
+                break;
+            case LIGHT_TAG:
+                iconId = R.drawable.light;
+                break;
+            case DARK_TAG:
+                iconId = R.drawable.dark;
+                break;
+            case WATER_TAG:
+                iconId = R.drawable.water;
+                break;
+            case FIRE_TAG:
+                iconId = R.drawable.fire;
+                break;
+        }
+        return iconId;
     }
 
     private void checkNeedToMove(float currentMoveX, float currentMoveY, int id) {
