@@ -300,7 +300,7 @@ public class TouchView extends ConstraintLayout {
                         indexRecorderArray.add(j);
                         rootView.removeView(itemDataArray.get(j).getItemRoot());
 
-                    }
+                    }   //
                 }
 
             }
