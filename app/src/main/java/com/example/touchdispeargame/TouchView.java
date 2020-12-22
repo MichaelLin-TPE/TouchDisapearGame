@@ -262,97 +262,125 @@ public class TouchView extends ConstraintLayout {
         }
     };
 
+    private Runnable checkHorizontalFullLineRunnable = new Runnable() {
+        @Override
+        public void run() {
+            for (int i = 0; i < 21; i += 5) {
+                //先橫的全版 與值得全版
+                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+                String firstTag = (String) itemDataArray.get(i + 1).getItemRoot().getTag();
+                String secondTag = (String) itemDataArray.get(i + 2).getItemRoot().getTag();
+                String thirdTag = (String) itemDataArray.get(i + 3).getItemRoot().getTag();
+                String fourthTag = (String) itemDataArray.get(i + 4).getItemRoot().getTag();
+                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
+                    MichaelLog.i("有整行的要消除");
+                    for (int j = i; j <= i + 4; j++) {
+                        indexRecorderArray.add(j);
+                        rootView.removeView(itemDataArray.get(j).getItemRoot());
+                    }
+                }
+            }
+            handler.postDelayed(checkStraightFullLineRunnable,400);
+        }
+    };
+
+    private Runnable checkStraightFullLineRunnable = new Runnable() {
+        @Override
+        public void run() {
+            //再來是直版
+            for (int i = 0; i < 5; i++) {
+                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+                String firstTag = (String) itemDataArray.get(i + 5).getItemRoot().getTag();
+                String secondTag = (String) itemDataArray.get(i + 10).getItemRoot().getTag();
+                String thirdTag = (String) itemDataArray.get(i + 15).getItemRoot().getTag();
+                String fourthTag = (String) itemDataArray.get(i + 20).getItemRoot().getTag();
+                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
+                    MichaelLog.i("有整行的要消除");
+                    for (int j = i; j <= i + 20; j += 5) {
+                        indexRecorderArray.add(j);
+                        rootView.removeView(itemDataArray.get(j).getItemRoot());
+
+                    }
+                }
+
+            }
+            handler.postDelayed(checkHorizontalThreeItemRunnable,400);
+        }
+    };
+
+    private Runnable checkHorizontalThreeItemRunnable = new Runnable() {
+        @Override
+        public void run() {
+            //再來是三格以上的,先找橫排
+            for (int i = 0; i < 25; i++) {
+                if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24) {
+                    continue;
+                }
+                int firstIndex = i + 1;
+                int secondIndex = i + 2;
+                int thirdIndex = i + 3;
+                if (firstIndex > 24 || secondIndex > 24) {
+                    break;
+                }
+                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+                String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
+                String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
+                String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
+                if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
+                    indexRecorderArray.add(i);
+                    indexRecorderArray.add(firstIndex);
+                    indexRecorderArray.add(secondIndex);
+                    rootView.removeView(itemDataArray.get(i).getItemRoot());
+                    rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
+                    rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
+                }
+                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
+                    indexRecorderArray.add(thirdIndex);
+                    rootView.removeView(itemDataArray.get(thirdIndex).getItemRoot());
+
+                }
+            }
+            handler.postDelayed(checkStraightThreeItemRunnable,400);
+        }
+    };
+
+    private Runnable checkStraightThreeItemRunnable = new Runnable() {
+        @Override
+        public void run() {
+            //再來是三格以上的,先找直排
+            for (int i = 0; i < 15; i++) {
+                int firstIndex = i + 5;
+                int secondIndex = i + 10;
+                int thirdIndex = i + 15;
+                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+                String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
+                String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
+                String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
+                if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
+                    indexRecorderArray.add(i);
+                    indexRecorderArray.add(firstIndex);
+                    indexRecorderArray.add(secondIndex);
+                    rootView.removeView(itemDataArray.get(i).getItemRoot());
+                    rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
+                    rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
+                }
+                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
+                    indexRecorderArray.add(thirdIndex);
+                    rootView.removeView(itemDataArray.get(thirdIndex).getItemRoot());
+
+                }
+            }
+
+            handler.postDelayed(addRandomView, 50);
+
+        }
+    };
+
 
     private void checkDisappearItem() {
         indexRecorderArray = new ArrayList<>();
-        for (int i = 0; i < 21; i += 5) {
-            //先橫的全版 與值得全版
-            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-            String firstTag = (String) itemDataArray.get(i + 1).getItemRoot().getTag();
-            String secondTag = (String) itemDataArray.get(i + 2).getItemRoot().getTag();
-            String thirdTag = (String) itemDataArray.get(i + 3).getItemRoot().getTag();
-            String fourthTag = (String) itemDataArray.get(i + 4).getItemRoot().getTag();
-            if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
-                MichaelLog.i("有整行的要消除");
-                for (int j = i; j <= i + 4; j++) {
-                    indexRecorderArray.add(j);
-                    rootView.removeView(itemDataArray.get(j).getItemRoot());
-                }
-            }
-        }
 
-        //再來是直版
-        for (int i = 0; i < 5; i++) {
-            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-            String firstTag = (String) itemDataArray.get(i + 5).getItemRoot().getTag();
-            String secondTag = (String) itemDataArray.get(i + 10).getItemRoot().getTag();
-            String thirdTag = (String) itemDataArray.get(i + 15).getItemRoot().getTag();
-            String fourthTag = (String) itemDataArray.get(i + 20).getItemRoot().getTag();
-            if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
-                MichaelLog.i("有整行的要消除");
-                for (int j = i; j <= i + 20; j += 5) {
-                    indexRecorderArray.add(j);
-                    rootView.removeView(itemDataArray.get(j).getItemRoot());
-                }
-            }
-        }
-
-        //再來是三格以上的,先找橫排
-        for (int i = 0; i < 25; i++) {
-            if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24) {
-                continue;
-            }
-            int firstIndex = i + 1;
-            int secondIndex = i + 2;
-            int thirdIndex = i + 3;
-            if (firstIndex > 24 || secondIndex > 24) {
-                break;
-            }
-            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-            String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
-            String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
-            String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
-            if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
-                indexRecorderArray.add(i);
-                indexRecorderArray.add(firstIndex);
-                indexRecorderArray.add(secondIndex);
-                rootView.removeView(itemDataArray.get(i).getItemRoot());
-                rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
-                rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
-            }
-            if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
-                indexRecorderArray.add(thirdIndex);
-                rootView.removeView(itemDataArray.get(thirdIndex).getItemRoot());
-            }
-        }
-
-        //再來是三格以上的,先找直排
-        for (int i = 0; i < 15; i++) {
-            int firstIndex = i + 5;
-            int secondIndex = i + 10;
-            int thirdIndex = i + 15;
-            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-            String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
-            String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
-            String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
-            if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
-                indexRecorderArray.add(i);
-                indexRecorderArray.add(firstIndex);
-                indexRecorderArray.add(secondIndex);
-                rootView.removeView(itemDataArray.get(i).getItemRoot());
-                rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
-                rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
-
-            }
-            if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
-                indexRecorderArray.add(thirdIndex);
-                rootView.removeView(itemDataArray.get(thirdIndex).getItemRoot());
-            }
-        }
-
-
-        handler.postDelayed(addRandomView, 50);
-
+        handler.postDelayed(checkHorizontalFullLineRunnable,100);
 
     }
 
