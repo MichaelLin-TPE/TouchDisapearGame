@@ -11,10 +11,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.Constraints;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,7 +39,8 @@ public class TouchView extends ConstraintLayout {
     private static final int WATER = 1;
 
     private Random random = new Random();
-    ;
+
+    private int itemIndex = 0;
 
     private static final int GREEN = 2;
 
@@ -62,6 +65,8 @@ public class TouchView extends ConstraintLayout {
     private View itemView;
 
     private Handler handler = new Handler(Looper.getMainLooper());
+
+    private ArrayList<ConnectItem> connectItemsArray;
 
     private ArrayList<ItemData> itemDataArray;
 
@@ -109,7 +114,6 @@ public class TouchView extends ConstraintLayout {
             //取得最右邊座標與做下面座標
             maxBottomY = rootView.getBottom();
             maxRightX = rootView.getRight();
-
 
 
             singleWidth = maxRightX / 5;
@@ -199,8 +203,6 @@ public class TouchView extends ConstraintLayout {
     };
 
 
-
-
     //先測試第一排固定住
     @SuppressLint("ClickableViewAccessibility")
     private OnTouchListener handleOnTouchListener(final ConstraintLayout itemRoot) {
@@ -208,7 +210,7 @@ public class TouchView extends ConstraintLayout {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                if (isCalculating){
+                if (isCalculating) {
                     return false;
                 }
 
@@ -262,125 +264,264 @@ public class TouchView extends ConstraintLayout {
         }
     };
 
-    private Runnable checkHorizontalFullLineRunnable = new Runnable() {
-        @Override
-        public void run() {
-            for (int i = 0; i < 21; i += 5) {
-                //先橫的全版 與值得全版
-                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-                String firstTag = (String) itemDataArray.get(i + 1).getItemRoot().getTag();
-                String secondTag = (String) itemDataArray.get(i + 2).getItemRoot().getTag();
-                String thirdTag = (String) itemDataArray.get(i + 3).getItemRoot().getTag();
-                String fourthTag = (String) itemDataArray.get(i + 4).getItemRoot().getTag();
-                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
-                    MichaelLog.i("有整行的要消除");
-                    for (int j = i; j <= i + 4; j++) {
-                        indexRecorderArray.add(j);
-                        rootView.removeView(itemDataArray.get(j).getItemRoot());
-                    }
-                }
-            }
-            handler.postDelayed(checkStraightFullLineRunnable,400);
-        }
-    };
-
-    private Runnable checkStraightFullLineRunnable = new Runnable() {
-        @Override
-        public void run() {
-            //再來是直版
-            for (int i = 0; i < 5; i++) {
-                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-                String firstTag = (String) itemDataArray.get(i + 5).getItemRoot().getTag();
-                String secondTag = (String) itemDataArray.get(i + 10).getItemRoot().getTag();
-                String thirdTag = (String) itemDataArray.get(i + 15).getItemRoot().getTag();
-                String fourthTag = (String) itemDataArray.get(i + 20).getItemRoot().getTag();
-                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
-                    MichaelLog.i("有整行的要消除");
-                    for (int j = i; j <= i + 20; j += 5) {
-                        indexRecorderArray.add(j);
-                        rootView.removeView(itemDataArray.get(j).getItemRoot());
-
-                    }   //
-                }
-
-            }
-            handler.postDelayed(checkHorizontalThreeItemRunnable,400);
-        }
-    };
-
-    private Runnable checkHorizontalThreeItemRunnable = new Runnable() {
-        @Override
-        public void run() {
-            //再來是三格以上的,先找橫排
-            for (int i = 0; i < 25; i++) {
-                if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24) {
-                    continue;
-                }
-                int firstIndex = i + 1;
-                int secondIndex = i + 2;
-                int thirdIndex = i + 3;
-                if (firstIndex > 24 || secondIndex > 24) {
-                    break;
-                }
-                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-                String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
-                String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
-                String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
-                if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
-                    indexRecorderArray.add(i);
-                    indexRecorderArray.add(firstIndex);
-                    indexRecorderArray.add(secondIndex);
-                    rootView.removeView(itemDataArray.get(i).getItemRoot());
-                    rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
-                    rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
-                }
-                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
-                    indexRecorderArray.add(thirdIndex);
-                    rootView.removeView(itemDataArray.get(thirdIndex).getItemRoot());
-
-                }
-            }
-            handler.postDelayed(checkStraightThreeItemRunnable,400);
-        }
-    };
-
-    private Runnable checkStraightThreeItemRunnable = new Runnable() {
-        @Override
-        public void run() {
-            //再來是三格以上的,先找直排
-            for (int i = 0; i < 15; i++) {
-                int firstIndex = i + 5;
-                int secondIndex = i + 10;
-                int thirdIndex = i + 15;
-                String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
-                String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
-                String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
-                String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
-                if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
-                    indexRecorderArray.add(i);
-                    indexRecorderArray.add(firstIndex);
-                    indexRecorderArray.add(secondIndex);
-                    rootView.removeView(itemDataArray.get(i).getItemRoot());
-                    rootView.removeView(itemDataArray.get(secondIndex).getItemRoot());
-                    rootView.removeView(itemDataArray.get(firstIndex).getItemRoot());
-                }
-                if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag)) {
-                    indexRecorderArray.add(thirdIndex);
-                    rootView.removeView(itemDataArray.get(thirdIndex).getItemRoot());
-
-                }
-            }
-
-            handler.postDelayed(addRandomView, 50);
-
-        }
-    };
-
 
     private void checkDisappearItem() {
         indexRecorderArray = new ArrayList<>();
 
-        handler.postDelayed(checkHorizontalFullLineRunnable,100);
+        connectItemsArray = new ArrayList<>();
+
+
+        for (int i = 0; i < 21; i += 5) {
+            //先橫的全版 與值得全版
+            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+            String firstTag = (String) itemDataArray.get(i + 1).getItemRoot().getTag();
+            String secondTag = (String) itemDataArray.get(i + 2).getItemRoot().getTag();
+            String thirdTag = (String) itemDataArray.get(i + 3).getItemRoot().getTag();
+            String fourthTag = (String) itemDataArray.get(i + 4).getItemRoot().getTag();
+            if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
+                MichaelLog.i("有整行的要消除");
+
+
+                ConnectItem connectItem = new ConnectItem();
+                ArrayList<Integer> indexArray = new ArrayList<>();
+                for (int j = i; j <= i + 4; j++) {
+
+                    indexArray.add(j);
+
+                }
+                connectItem.setItemIndexArray(indexArray);
+
+                connectItemsArray.add(connectItem);
+            }
+        }
+
+        for (int i = 0; i < 5; i++) {
+            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+            String firstTag = (String) itemDataArray.get(i + 5).getItemRoot().getTag();
+            String secondTag = (String) itemDataArray.get(i + 10).getItemRoot().getTag();
+            String thirdTag = (String) itemDataArray.get(i + 15).getItemRoot().getTag();
+            String fourthTag = (String) itemDataArray.get(i + 20).getItemRoot().getTag();
+            if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
+                MichaelLog.i("有整行的要消除");
+
+                ArrayList<Integer> indexArray = new ArrayList<>();
+                ConnectItem connectItem = new ConnectItem();
+
+                if (!connectItemsArray.isEmpty()) {
+
+                    boolean isFoundItem = false;
+
+                    for (ConnectItem item : connectItemsArray) {
+                        for (Integer index : item.getItemIndexArray()) {
+                            if (index == i || index == i + 20) {
+
+                                for (int j = i; j <= i + 20; j += 5) {
+                                    item.getItemIndexArray().add(j);
+                                }
+                                isFoundItem = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isFoundItem) {
+                        continue;
+                    }
+                }
+
+
+                for (int j = i; j <= i + 20; j += 5) {
+                    indexArray.add(j);
+                }
+                connectItem.setItemIndexArray(indexArray);
+                connectItemsArray.add(connectItem);
+            }
+        }
+
+
+        //再來是三格以上的,先找橫排
+        for (int i = 0; i < 25; i++) {
+            if (i == 3 || i == 4 || i == 8 || i == 9 || i == 13 || i == 14 || i == 18 || i == 19 || i == 23 || i == 24) {
+                continue;
+            }
+            int firstIndex = i + 1;
+            int secondIndex = i + 2;
+            int thirdIndex = i + 3;
+            if (firstIndex > 24 || secondIndex > 24) {
+                break;
+            }
+            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+            String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
+            String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
+            String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
+
+            if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
+
+                if (!connectItemsArray.isEmpty()) {
+
+                    boolean isFoundItem = false;
+
+                    for (ConnectItem item : connectItemsArray) {
+                        for (Integer index : item.getItemIndexArray()) {
+                            if (index == i || index == thirdIndex || index == secondIndex || index == firstIndex) {
+                                item.getItemIndexArray().add(i);
+                                item.getItemIndexArray().add(firstIndex);
+                                item.getItemIndexArray().add(secondIndex);
+                                if (rootTag.equals(thirdTag)) {
+                                    item.getItemIndexArray().add(thirdIndex);
+                                }
+                                isFoundItem = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (isFoundItem) {
+                        continue;
+                    }
+                }
+
+
+                ArrayList<Integer> indexArray = new ArrayList<>();
+                ConnectItem connectItem = new ConnectItem();
+
+
+                indexArray.add(i);
+                indexArray.add(firstIndex);
+                indexArray.add(secondIndex);
+
+                if (rootTag.equals(thirdTag)) {
+                    indexArray.add(thirdIndex);
+
+                }
+
+                connectItem.setItemIndexArray(indexArray);
+                connectItemsArray.add(connectItem);
+
+
+            }
+
+        }
+
+
+        //再來是三格以上的,先找直排
+        for (int i = 0; i < 15; i++) {
+            int firstIndex = i + 5;
+            int secondIndex = i + 10;
+            int thirdIndex = i + 15;
+            String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
+            String firstTag = (String) itemDataArray.get(firstIndex).getItemRoot().getTag();
+            String secondTag = (String) itemDataArray.get(secondIndex).getItemRoot().getTag();
+            String thirdTag = thirdIndex > 24 ? "" : (String) itemDataArray.get(thirdIndex).getItemRoot().getTag();
+            if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
+
+
+                if (!connectItemsArray.isEmpty()) {
+
+                    boolean isFoundItem = false;
+
+
+                    for (ConnectItem item : connectItemsArray) {
+                        for (Integer index : item.getItemIndexArray()) {
+                            if (index == i || index == firstIndex || index == secondIndex || index == thirdIndex) {
+                                item.getItemIndexArray().add(i);
+                                item.getItemIndexArray().add(firstIndex);
+                                item.getItemIndexArray().add(secondIndex);
+                                if (rootTag.equals(thirdTag)) {
+                                    item.getItemIndexArray().add(thirdIndex);
+                                }
+                                isFoundItem = true;
+                                break;
+                            }
+
+                        }
+                    }
+
+                    if (isFoundItem) {
+                        continue;
+                    }
+                }
+
+                ArrayList<Integer> indexArray = new ArrayList<>();
+                ConnectItem connectItem = new ConnectItem();
+
+                indexArray.add(i);
+                indexArray.add(firstIndex);
+                indexArray.add(secondIndex);
+
+                if (rootTag.equals(thirdTag)){
+                  indexArray.add(thirdIndex);
+                }
+                connectItem.setItemIndexArray(indexArray);
+                connectItemsArray.add(connectItem);
+            }
+        }
+
+
+        if (connectItemsArray.isEmpty()) {
+            isCalculating = false;
+            MichaelLog.i("找不到相同的珠子不消除");
+            return;
+        }
+
+
+
+
+        //開始刪除珠子
+
+        startToRemoveItem();
+
+
+    }
+    //開始消除珠子
+    private void startToRemoveItem() {
+        ConnectItem connectItem = connectItemsArray.get(itemIndex);
+
+        for (Integer index : connectItem.getItemIndexArray()){
+            rootView.removeView(itemDataArray.get(index).getItemRoot());
+        }
+        itemIndex ++;
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (itemIndex >= connectItemsArray.size()){
+
+                    startToAddView();
+                    itemIndex = 0;
+                    return;
+                }
+                startToRemoveItem();
+            }
+        },500);
+
+    }
+    //開始產生珠子
+    private void startToAddView() {
+        //把蒐集到的index都交給 indexRecorderArray
+        for (ConnectItem item : connectItemsArray){
+            if (item == null){
+                continue;
+            }
+            indexRecorderArray.addAll(item.getItemIndexArray());
+        }
+
+
+        Iterator<Integer> indexIterator = indexRecorderArray.iterator();
+        while (indexIterator.hasNext()) {
+            int index = indexIterator.next();
+            int sameIndexCount = 0;
+            for (int loopIndex : indexRecorderArray) {
+                if (index == loopIndex) {
+                    sameIndexCount++;
+                }
+                if (sameIndexCount == 2) {
+                    indexIterator.remove();
+                    break;
+                }
+            }
+        }
+
+
+        handler.postDelayed(addRandomView, 50);
 
     }
 
@@ -416,26 +557,8 @@ public class TouchView extends ConstraintLayout {
 
     //長出來
     private void doAddRandomView() {
-        if (indexRecorderArray.isEmpty()) {
-            isCalculating = false;
-            MichaelLog.i("找不到相同的珠子不消除");
-            return;
-        }
-        //先判斷index有沒有重複
-        Iterator<Integer> indexIterator = indexRecorderArray.iterator();
-        while (indexIterator.hasNext()) {
-            int index = indexIterator.next();
-            int sameIndexCount = 0;
-            for (int loopIndex : indexRecorderArray) {
-                if (index == loopIndex) {
-                    sameIndexCount++;
-                }
-                if (sameIndexCount == 2) {
-                    indexIterator.remove();
-                    break;
-                }
-            }
-        }
+
+
         //這邊要想辦法讓剩餘的珠子往下掉下來
         ArrayList<Integer> restIndexArray = new ArrayList<>();
         for (int i = 0; i < 25; i++) {
@@ -477,52 +600,52 @@ public class TouchView extends ConstraintLayout {
             boolean isFoundThirdSpace = false;
             boolean isFoundFourthSpace = false;
             int lastIndex = 0;
-            if (firstLineIndex >= 24){
+            if (firstLineIndex >= 24) {
                 continue;
             }
 
             for (Integer spaceIndex : indexRecorderArray) {
-                if (firstLineIndex == spaceIndex){
+                if (firstLineIndex == spaceIndex) {
                     lastIndex = spaceIndex;
                     isFoundFirstSpace = true;
                 }
-                if (secondLineIndex == spaceIndex){
+                if (secondLineIndex == spaceIndex) {
                     lastIndex = spaceIndex;
                     isFoundSecondSpace = true;
                 }
-                if (thirdLineIndex == spaceIndex){
+                if (thirdLineIndex == spaceIndex) {
                     lastIndex = spaceIndex;
                     isFoundThirdSpace = true;
                 }
-                if (fourthLineIndex == spaceIndex){
-                    MichaelLog.i("fourthLineIndex : "+fourthLineIndex + " , spaceIndex : "+spaceIndex);
+                if (fourthLineIndex == spaceIndex) {
+                    MichaelLog.i("fourthLineIndex : " + fourthLineIndex + " , spaceIndex : " + spaceIndex);
                     lastIndex = spaceIndex;
                     isFoundFourthSpace = true;
                 }
             }
 
-            if (isFoundFourthSpace){
+            if (isFoundFourthSpace) {
 
-                switchItem(restIndex,lastIndex);
+                switchItem(restIndex, lastIndex);
                 continue;
             }
-            if (isFoundThirdSpace){
+            if (isFoundThirdSpace) {
 
-                switchItem(restIndex,lastIndex);
+                switchItem(restIndex, lastIndex);
                 continue;
             }
-            if (isFoundSecondSpace){
+            if (isFoundSecondSpace) {
 
-                switchItem(restIndex,lastIndex);
+                switchItem(restIndex, lastIndex);
                 continue;
             }
-            if (isFoundFirstSpace){
+            if (isFoundFirstSpace) {
 
-                switchItem(restIndex,lastIndex);
+                switchItem(restIndex, lastIndex);
             }
         }
 
-        handler.postDelayed(addViewRunnable,1000);
+        handler.postDelayed(addViewRunnable, 1000);
 
     }
 
@@ -530,22 +653,22 @@ public class TouchView extends ConstraintLayout {
         @Override
         public void run() {
             for (Integer index : indexRecorderArray) {
-                MichaelLog.i("num : "+index);
+                MichaelLog.i("num : " + index);
                 int randomIndex = random.nextInt(getIconArray().size());
                 itemDataArray.get(index).getIvIcon().setImageResource(getIconArray().get(randomIndex));
                 itemDataArray.get(index).getItemRoot().setTag(getItemTag(randomIndex));
-                rootView.addView(itemDataArray.get(index).getItemRoot(),index);
+                rootView.addView(itemDataArray.get(index).getItemRoot(), index);
 
 //                AlphaAnimation alphaAnimation = new AlphaAnimation(0.2f,1.0f);
 //                alphaAnimation.setDuration(500);
 //                itemDataArray.get(index).getItemRoot().startAnimation(alphaAnimation);
 
-                TranslateAnimation animation = new TranslateAnimation(0f,0f,-400f,0f);
+                TranslateAnimation animation = new TranslateAnimation(0f, 0f, -400f, 0f);
                 animation.setDuration(250);
                 itemDataArray.get(index).getItemRoot().startAnimation(animation);
 
             }
-            handler.postDelayed(checkAgainDisappearRunnable,250);
+            handler.postDelayed(checkAgainDisappearRunnable, 250);
         }
     };
 
@@ -567,14 +690,14 @@ public class TouchView extends ConstraintLayout {
         rootView.removeView(itemDataArray.get(restIndex).getItemRoot());
         rootView.addView(itemDataArray.get(lastIndex).getItemRoot());
 
-        TranslateAnimation animation = new TranslateAnimation(0f,0f,-200f,0f);
+        TranslateAnimation animation = new TranslateAnimation(0f, 0f, -200f, 0f);
         animation.setDuration(200);
         itemDataArray.get(lastIndex).getItemRoot().startAnimation(animation);
 
         int index = 0;
 
-        for (int i = 0 ; i < indexRecorderArray.size() ; i ++){
-            if (lastIndex == indexRecorderArray.get(i)){
+        for (int i = 0; i < indexRecorderArray.size(); i++) {
+            if (lastIndex == indexRecorderArray.get(i)) {
                 index = i;
                 break;
             }
@@ -588,7 +711,7 @@ public class TouchView extends ConstraintLayout {
     private int getTagIcon(String tag) {
         int iconId = 0;
 
-        switch (tag){
+        switch (tag) {
             case GREEN_TAG:
                 iconId = R.drawable.green;
                 break;
