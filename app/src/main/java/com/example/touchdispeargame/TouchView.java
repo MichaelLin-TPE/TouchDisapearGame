@@ -77,6 +77,8 @@ public class TouchView extends ConstraintLayout {
 
     private ArrayList<ItemData> itemDataArray;
 
+    private TranslateAnimation animation;
+
 
     public TouchView(@NonNull Context context) {
         super(context);
@@ -193,6 +195,10 @@ public class TouchView extends ConstraintLayout {
 
 
                     rootView.addView(itemView);
+
+                    //下墜動畫
+                    rootView.startAnimation(getTranslateAnimation());
+
 //                itemRoot.setOnClickListener(handleOnClickListener(itemRoot));
                     itemRoot.setOnTouchListener(handleOnTouchListener(itemRoot));
 
@@ -213,6 +219,7 @@ public class TouchView extends ConstraintLayout {
                     sbSecondCount.setMax(6000);
                     sbSecondCount.setProgress(6000);
                     sbSecondCount.getThumb().mutate().setAlpha(0);
+                    sbSecondCount.setVisibility(GONE);
                 }
             });
 
@@ -224,6 +231,18 @@ public class TouchView extends ConstraintLayout {
             MichaelLog.i("maxBottomY : " + maxBottomY + " , maxRightX : " + maxRightX + " , array size : " + itemDataArray.size());
         }
     };
+
+
+
+    private TranslateAnimation getTranslateAnimation(){
+
+        if (animation != null){
+            return animation;
+        }
+        animation = new TranslateAnimation(0f, 0f, -1000f, 0f);
+        animation.setDuration(250);
+        return animation;
+    }
 
 
     //先測試第一排固定住
@@ -246,7 +265,7 @@ public class TouchView extends ConstraintLayout {
                             if (isStopMove){
                                 return false;
                             }
-
+                            sbSecondCount.setVisibility(VISIBLE);
                             float moveX = event.getRawX() + x;
                             float moveY = event.getRawY() + y;
                             v.animate().x(moveX)
@@ -260,6 +279,7 @@ public class TouchView extends ConstraintLayout {
                             if (secondCount <= 0){
                                 isStopMove = true;
                                 handler.removeCallbacks(startToCountRunnable);
+
                                 stopToMove(v,itemRoot);
 
                                 return false;
@@ -299,10 +319,9 @@ public class TouchView extends ConstraintLayout {
 
     private void stopToMove(View v, ConstraintLayout itemRoot){
         isCalculating = true;
-
+        sbSecondCount.setVisibility(GONE);
         int currentId = itemRoot.getId();
         v.animate().x(itemDataArray.get(currentId - 1).getLeftX()).y(itemDataArray.get(currentId - 1).getTopY()).setDuration(0).start();
-
         //開始執行消除
         handler.postDelayed(checkDisappearRunnable, 200);
     }
@@ -772,9 +791,9 @@ public class TouchView extends ConstraintLayout {
                 rootView.addView(itemDataArray.get(index).getItemRoot(), index);
 
 
-                TranslateAnimation animation = new TranslateAnimation(0f, 0f, -600f, 0f);
-                animation.setDuration(250);
-                itemDataArray.get(index).getItemRoot().startAnimation(animation);
+//                TranslateAnimation animation = new TranslateAnimation(0f, 0f, -600f, 0f);
+//                animation.setDuration(250);
+                itemDataArray.get(index).getItemRoot().startAnimation(getTranslateAnimation());
 
             }
             handler.postDelayed(checkAgainDisappearRunnable, 150);
