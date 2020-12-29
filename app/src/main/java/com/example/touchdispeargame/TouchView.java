@@ -285,7 +285,7 @@ public class TouchView extends ConstraintLayout {
                                 return false;
                             }
 
-
+    //////////
                             //在移動的同時也判斷是否要換方格
                             checkNeedToMove(moveX, moveY, itemRoot.getId());
 
