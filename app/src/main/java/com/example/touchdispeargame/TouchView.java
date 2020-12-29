@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,11 +59,15 @@ public class TouchView extends ConstraintLayout {
 
     private static final String LIGHT_TAG = "light";
 
+    private SeekBar sbSecondCount;
+
     private float x = 0, y = 0;
 
     private OnShowMaskListener maskListener;
 
-    private boolean isCalculating;
+    private boolean isCalculating,isStopMove;
+
+    private int secondCount = 6000;
 
     private View itemView;
 
@@ -92,7 +97,10 @@ public class TouchView extends ConstraintLayout {
 
         rootView = (ConstraintLayout) View.inflate(getContext(), R.layout.touch_view, this);
         itemView = View.inflate(getContext(), R.layout.item_layout, null);
+        sbSecondCount = View.inflate(getContext(),R.layout.second_count_view,null).findViewById(R.id.second_count_seek_bar);
         ivIcon = itemView.findViewById(R.id.icon);
+
+
 
         rootView.post(viewPostRunnable);
     }
@@ -133,14 +141,6 @@ public class TouchView extends ConstraintLayout {
                     textCount++;
                     itemView = LayoutInflater.from(getContext()).inflate(R.layout.item_layout, rootView, false);
                     ivIcon = itemView.findViewById(R.id.icon);
-
-
-                    //賦予珠子圖片
-//                    if (iconIndex > 3){
-//                        iconIndex = 0;
-//                    }
-//                    ivIcon.setImageResource(getIconArray().get(iconIndex));
-//                    iconIndex ++;
 
                     //隨機出現珠子
                     int randomIndex = random.nextInt(getIconArray().size());
@@ -199,6 +199,26 @@ public class TouchView extends ConstraintLayout {
                 }
 
             }
+            rootView.addView(sbSecondCount);
+
+            sbSecondCount.post(new Runnable() {
+                @Override
+                public void run() {
+                    sbSecondCount.setX(10f);
+                    sbSecondCount.setY(middleScreenY - sbSecondCount.getHeight());
+                    LayoutParams seekBarParams = (LayoutParams) sbSecondCount.getLayoutParams();
+                    seekBarParams.height = DpConvertTool.getInstance().getDb(20);
+                    seekBarParams.width = (int) maxRightX;
+                    sbSecondCount.setLayoutParams(seekBarParams);
+                    sbSecondCount.setMax(6000);
+                    sbSecondCount.setProgress(6000);
+                    sbSecondCount.getThumb().mutate().setAlpha(0);
+                }
+            });
+
+
+
+
 
 
             MichaelLog.i("maxBottomY : " + maxBottomY + " , maxRightX : " + maxRightX + " , array size : " + itemDataArray.size());
@@ -213,18 +233,19 @@ public class TouchView extends ConstraintLayout {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                if (isCalculating) {
-                    return false;
-                }
-
                 if (v.getId() == itemRoot.getId()) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
                             x = v.getX() - event.getRawX();
                             y = v.getY() - event.getRawY();
+
                             MichaelLog.i("x : " + x + " , y : " + y);
                             break;
                         case MotionEvent.ACTION_MOVE:
+
+                            if (isStopMove){
+                                return false;
+                            }
 
                             float moveX = event.getRawX() + x;
                             float moveY = event.getRawY() + y;
@@ -235,18 +256,34 @@ public class TouchView extends ConstraintLayout {
 
                             MichaelLog.i("移動x : " + (event.getRawX() + x) + " , y : " + (event.getRawY() + y));
 
+
+                            if (secondCount <= 0){
+                                isStopMove = true;
+                                handler.removeCallbacks(startToCountRunnable);
+                                stopToMove(v,itemRoot);
+
+                                return false;
+                            }
+
+
                             //在移動的同時也判斷是否要換方格
                             checkNeedToMove(moveX, moveY, itemRoot.getId());
+
+                            if (isCalculating){
+                                return false;
+                            }
+                            startToCountSixSecond();
+
                             break;
                         case MotionEvent.ACTION_UP:
                             MichaelLog.i("action Up 開始計算");
+                            if (isStopMove){
+                                return false;
+                            }
+                            isStopMove = true;
                             isCalculating = true;
-
-                            int currentId = itemRoot.getId();
-                            v.animate().x(itemDataArray.get(currentId - 1).getLeftX()).y(itemDataArray.get(currentId - 1).getTopY()).setDuration(0).start();
-
-                            //開始執行消除
-                            handler.postDelayed(checkDisappearRunnable, 200);
+                            handler.removeCallbacks(startToCountRunnable);
+                            stopToMove(v,itemRoot);
 
                             break;
                         default:
@@ -259,6 +296,34 @@ public class TouchView extends ConstraintLayout {
             }
         };
     }
+
+    private void stopToMove(View v, ConstraintLayout itemRoot){
+        isCalculating = true;
+
+        int currentId = itemRoot.getId();
+        v.animate().x(itemDataArray.get(currentId - 1).getLeftX()).y(itemDataArray.get(currentId - 1).getTopY()).setDuration(0).start();
+
+        //開始執行消除
+        handler.postDelayed(checkDisappearRunnable, 200);
+    }
+
+    private void startToCountSixSecond() {
+        isCalculating = true;
+        handler.postDelayed(startToCountRunnable,100);
+    }
+
+
+    private Runnable startToCountRunnable = new Runnable() {
+        @Override
+        public void run() {
+
+            secondCount = secondCount - 100;
+            MichaelLog.i("seekBar progress : "+secondCount);
+            sbSecondCount.setProgress(secondCount);
+
+            startToCountSixSecond();
+        }
+    };
 
     private Runnable checkDisappearRunnable = new Runnable() {
         @Override
@@ -487,6 +552,9 @@ public class TouchView extends ConstraintLayout {
             maskListener.onShowCombo("done");
             removeItemIndex = 1;
             MichaelLog.i("找不到相同的珠子不消除");
+            isStopMove = false;
+            secondCount = 6000;
+            sbSecondCount.setProgress(6000);
             return;
         }
 
@@ -690,7 +758,7 @@ public class TouchView extends ConstraintLayout {
             }
         }
 
-        handler.postDelayed(addViewRunnable, 1000);
+        handler.postDelayed(addViewRunnable, 500);
 
     }
 
@@ -703,16 +771,13 @@ public class TouchView extends ConstraintLayout {
                 itemDataArray.get(index).getItemRoot().setTag(getItemTag(randomIndex));
                 rootView.addView(itemDataArray.get(index).getItemRoot(), index);
 
-//                AlphaAnimation alphaAnimation = new AlphaAnimation(0.2f,1.0f);
-//                alphaAnimation.setDuration(500);
-//                itemDataArray.get(index).getItemRoot().startAnimation(alphaAnimation);
 
-                TranslateAnimation animation = new TranslateAnimation(0f, 0f, -400f, 0f);
+                TranslateAnimation animation = new TranslateAnimation(0f, 0f, -600f, 0f);
                 animation.setDuration(250);
                 itemDataArray.get(index).getItemRoot().startAnimation(animation);
 
             }
-            handler.postDelayed(checkAgainDisappearRunnable, 250);
+            handler.postDelayed(checkAgainDisappearRunnable, 150);
         }
     };
 

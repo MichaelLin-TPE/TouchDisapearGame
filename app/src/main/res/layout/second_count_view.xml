@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SeekBar xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/second_count_seek_bar"
+    android:layout_width="match_parent"
+    android:max="6000"
+    android:progress="6000"
+    android:theme="@null"
+    android:progressDrawable="@drawable/seek_bar_background"
+    android:layout_height="20dp">
+
+</SeekBar>
