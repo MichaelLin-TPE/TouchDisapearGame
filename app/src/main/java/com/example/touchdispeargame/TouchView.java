@@ -40,7 +40,7 @@ public class TouchView extends ConstraintLayout {
 
     private Random random = new Random();
 
-    private int itemIndex = 0;
+    private int itemIndex = 0 , removeItemIndex = 1;
 
     private static final int GREEN = 2;
 
@@ -59,6 +59,8 @@ public class TouchView extends ConstraintLayout {
     private static final String LIGHT_TAG = "light";
 
     private float x = 0, y = 0;
+
+    private OnShowMaskListener maskListener;
 
     private boolean isCalculating;
 
@@ -91,6 +93,7 @@ public class TouchView extends ConstraintLayout {
         rootView = (ConstraintLayout) View.inflate(getContext(), R.layout.touch_view, this);
         itemView = View.inflate(getContext(), R.layout.item_layout, null);
         ivIcon = itemView.findViewById(R.id.icon);
+
         rootView.post(viewPostRunnable);
     }
 
@@ -260,6 +263,7 @@ public class TouchView extends ConstraintLayout {
     private Runnable checkDisappearRunnable = new Runnable() {
         @Override
         public void run() {
+            maskListener.onShow(true);
             checkDisappearItem();
         }
     };
@@ -271,8 +275,9 @@ public class TouchView extends ConstraintLayout {
         connectItemsArray = new ArrayList<>();
 
 
+        //橫的全版
         for (int i = 0; i < 21; i += 5) {
-            //先橫的全版 與值得全版
+
             String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
             String firstTag = (String) itemDataArray.get(i + 1).getItemRoot().getTag();
             String secondTag = (String) itemDataArray.get(i + 2).getItemRoot().getTag();
@@ -280,7 +285,6 @@ public class TouchView extends ConstraintLayout {
             String fourthTag = (String) itemDataArray.get(i + 4).getItemRoot().getTag();
             if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
                 MichaelLog.i("有整行的要消除");
-
 
                 ConnectItem connectItem = new ConnectItem();
                 ArrayList<Integer> indexArray = new ArrayList<>();
@@ -294,7 +298,7 @@ public class TouchView extends ConstraintLayout {
                 connectItemsArray.add(connectItem);
             }
         }
-
+        //直得全版
         for (int i = 0; i < 5; i++) {
             String rootTag = (String) itemDataArray.get(i).getItemRoot().getTag();
             String firstTag = (String) itemDataArray.get(i + 5).getItemRoot().getTag();
@@ -302,10 +306,6 @@ public class TouchView extends ConstraintLayout {
             String thirdTag = (String) itemDataArray.get(i + 15).getItemRoot().getTag();
             String fourthTag = (String) itemDataArray.get(i + 20).getItemRoot().getTag();
             if (rootTag.equals(firstTag) && rootTag.equals(secondTag) && rootTag.equals(thirdTag) && rootTag.equals(fourthTag)) {
-                MichaelLog.i("有整行的要消除");
-
-                ArrayList<Integer> indexArray = new ArrayList<>();
-                ConnectItem connectItem = new ConnectItem();
 
                 if (!connectItemsArray.isEmpty()) {
 
@@ -313,7 +313,9 @@ public class TouchView extends ConstraintLayout {
 
                     for (ConnectItem item : connectItemsArray) {
                         for (Integer index : item.getItemIndexArray()) {
-                            if (index == i || index == i + 20) {
+
+                            boolean isSameIndex = index == i || index == i + 20 || index == i + 10 || index == i + 5 || index == i + 15;
+                            if (isSameIndex) {
 
                                 for (int j = i; j <= i + 20; j += 5) {
                                     item.getItemIndexArray().add(j);
@@ -327,7 +329,8 @@ public class TouchView extends ConstraintLayout {
                         continue;
                     }
                 }
-
+                ArrayList<Integer> indexArray = new ArrayList<>();
+                ConnectItem connectItem = new ConnectItem();
 
                 for (int j = i; j <= i + 20; j += 5) {
                     indexArray.add(j);
@@ -356,17 +359,29 @@ public class TouchView extends ConstraintLayout {
 
             if (rootTag.equals(firstTag) && rootTag.equals(secondTag)) {
 
+                boolean isThirdTagSame = rootTag.equals(thirdTag) && thirdIndex != 5 && thirdIndex != 10 && thirdIndex != 15 && thirdIndex != 20;
+
                 if (!connectItemsArray.isEmpty()) {
 
                     boolean isFoundItem = false;
 
                     for (ConnectItem item : connectItemsArray) {
                         for (Integer index : item.getItemIndexArray()) {
-                            if (index == i || index == thirdIndex || index == secondIndex || index == firstIndex) {
+
+                            boolean isSameIndex = index == i || index == thirdIndex || index == secondIndex || index == firstIndex;
+
+                            boolean isSameTag = itemDataArray.get(index).getItemRoot().getTag().equals(rootTag)
+                                    && itemDataArray.get(index).getItemRoot().getTag().equals(firstTag)
+                                    && itemDataArray.get(index).getItemRoot().getTag().equals(secondTag);
+
+
+
+                            if (isSameIndex && isSameTag) {
                                 item.getItemIndexArray().add(i);
                                 item.getItemIndexArray().add(firstIndex);
                                 item.getItemIndexArray().add(secondIndex);
-                                if (rootTag.equals(thirdTag)) {
+                                if (isThirdTagSame) {
+                                    MichaelLog.i("會消除第四顆");
                                     item.getItemIndexArray().add(thirdIndex);
                                 }
                                 isFoundItem = true;
@@ -388,8 +403,7 @@ public class TouchView extends ConstraintLayout {
                 indexArray.add(i);
                 indexArray.add(firstIndex);
                 indexArray.add(secondIndex);
-
-                if (rootTag.equals(thirdTag)) {
+                if (isThirdTagSame) {
                     indexArray.add(thirdIndex);
 
                 }
@@ -419,17 +433,27 @@ public class TouchView extends ConstraintLayout {
 
                     boolean isFoundItem = false;
 
-
                     for (ConnectItem item : connectItemsArray) {
                         for (Integer index : item.getItemIndexArray()) {
-                            if (index == i || index == firstIndex || index == secondIndex || index == thirdIndex) {
+
+                            boolean isSameIndex = index == i || index == thirdIndex || index == secondIndex || index == firstIndex;
+
+                            boolean isSameTag = itemDataArray.get(index).getItemRoot().getTag().equals(rootTag)
+                                    && itemDataArray.get(index).getItemRoot().getTag().equals(firstTag)
+                                    && itemDataArray.get(index).getItemRoot().getTag().equals(secondTag);
+
+
+                            if (isSameIndex && isSameTag) {
                                 item.getItemIndexArray().add(i);
                                 item.getItemIndexArray().add(firstIndex);
                                 item.getItemIndexArray().add(secondIndex);
+
+                                isFoundItem = true;
+
                                 if (rootTag.equals(thirdTag)) {
                                     item.getItemIndexArray().add(thirdIndex);
                                 }
-                                isFoundItem = true;
+
                                 break;
                             }
 
@@ -459,6 +483,9 @@ public class TouchView extends ConstraintLayout {
 
         if (connectItemsArray.isEmpty()) {
             isCalculating = false;
+            maskListener.onShow(false);
+            maskListener.onShowCombo("done");
+            removeItemIndex = 1;
             MichaelLog.i("找不到相同的珠子不消除");
             return;
         }
@@ -468,21 +495,38 @@ public class TouchView extends ConstraintLayout {
 
         //開始刪除珠子
 
-        startToRemoveItem();
-
-
-    }
-    //開始消除珠子
-    private void startToRemoveItem() {
-        ConnectItem connectItem = connectItemsArray.get(itemIndex);
-
-        for (Integer index : connectItem.getItemIndexArray()){
-            rootView.removeView(itemDataArray.get(index).getItemRoot());
-        }
-        itemIndex ++;
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
+
+                startToRemoveItem();
+            }
+        },200);
+
+    }
+
+
+
+
+
+    //開始消除珠子
+    private void startToRemoveItem() {
+        MichaelLog.i("開始消除珠子位置："+itemIndex);
+        ConnectItem connectItem = connectItemsArray.get(itemIndex);
+        for (Integer index : connectItem.getItemIndexArray()){
+            MichaelLog.i("被消除的位置："+index);
+            rootView.removeView(itemDataArray.get(index).getItemRoot());
+        }
+        itemIndex ++;
+
+        MichaelLog.i("removeIndex : "+removeItemIndex);
+        maskListener.onShowCombo(removeItemIndex + "Combo !!");
+        removeItemIndex ++;
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+
                 if (itemIndex >= connectItemsArray.size()){
 
                     startToAddView();
@@ -502,6 +546,8 @@ public class TouchView extends ConstraintLayout {
                 continue;
             }
             indexRecorderArray.addAll(item.getItemIndexArray());
+
+
         }
 
 
@@ -588,7 +634,6 @@ public class TouchView extends ConstraintLayout {
         Collections.sort(indexRecorderArray);
 
         for (Integer restIndex : restIndexArray) {
-            MichaelLog.i("restIndex : " + restIndex);
 
             int firstLineIndex = restIndex + 5;
             int secondLineIndex = restIndex + 10;
@@ -653,7 +698,6 @@ public class TouchView extends ConstraintLayout {
         @Override
         public void run() {
             for (Integer index : indexRecorderArray) {
-                MichaelLog.i("num : " + index);
                 int randomIndex = random.nextInt(getIconArray().size());
                 itemDataArray.get(index).getIvIcon().setImageResource(getIconArray().get(randomIndex));
                 itemDataArray.get(index).getItemRoot().setTag(getItemTag(randomIndex));
@@ -992,5 +1036,16 @@ public class TouchView extends ConstraintLayout {
         super.onDraw(canvas);
 
 
+    }
+
+    public void setShowMaskListener(OnShowMaskListener onShowMaskListener) {
+        this.maskListener = onShowMaskListener;
+    }
+
+    public interface OnShowMaskListener{
+        void onShow(boolean isShow);
+
+
+        void onShowCombo(String info);
     }
 }
