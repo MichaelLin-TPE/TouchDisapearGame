@@ -148,7 +148,7 @@ public class TouchView extends ConstraintLayout {
                     int randomIndex = random.nextInt(getIconArray().size());
                     ivIcon.setImageResource(getIconArray().get(randomIndex));
 
-
+//
                     ConstraintLayout.LayoutParams params = new Constraints.LayoutParams((int) singleWidth, (int) singleHeight);
                     ConstraintLayout itemRoot = itemView.findViewById(R.id.item_root);
                     itemRoot.setLayoutParams(params);
