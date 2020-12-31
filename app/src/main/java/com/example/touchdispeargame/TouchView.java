@@ -213,7 +213,7 @@ public class TouchView extends ConstraintLayout {
                     sbSecondCount.setX(10f);
                     sbSecondCount.setY(middleScreenY - sbSecondCount.getHeight());
                     LayoutParams seekBarParams = (LayoutParams) sbSecondCount.getLayoutParams();
-                    seekBarParams.height = DpConvertTool.getInstance().getDb(20);
+                    seekBarParams.height = DpConvertTool.getInstance().getDb(10);
                     seekBarParams.width = (int) maxRightX;
                     sbSecondCount.setLayoutParams(seekBarParams);
                     sbSecondCount.setMax(6000);
