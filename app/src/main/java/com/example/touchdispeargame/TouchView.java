@@ -3,6 +3,7 @@ package com.example.touchdispeargame;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
@@ -41,7 +42,7 @@ public class TouchView extends ConstraintLayout {
 
     private Random random = new Random();
 
-    private int itemIndex = 0 , removeItemIndex = 1;
+    private int itemIndex = 0, removeItemIndex = 1;
 
     private static final int GREEN = 2;
 
@@ -65,7 +66,7 @@ public class TouchView extends ConstraintLayout {
 
     private OnShowMaskListener maskListener;
 
-    private boolean isCalculating,isStopMove;
+    private boolean isCalculating, isStopMove;
 
     private int secondCount = 6000;
 
@@ -99,9 +100,8 @@ public class TouchView extends ConstraintLayout {
 
         rootView = (ConstraintLayout) View.inflate(getContext(), R.layout.touch_view, this);
         itemView = View.inflate(getContext(), R.layout.item_layout, null);
-        sbSecondCount = View.inflate(getContext(),R.layout.second_count_view,null).findViewById(R.id.second_count_seek_bar);
+        sbSecondCount = View.inflate(getContext(), R.layout.second_count_view, null).findViewById(R.id.second_count_seek_bar);
         ivIcon = itemView.findViewById(R.id.icon);
-
 
 
         rootView.post(viewPostRunnable);
@@ -115,6 +115,10 @@ public class TouchView extends ConstraintLayout {
         iconArray.add(R.drawable.dark);
         iconArray.add(R.drawable.light);
         return iconArray;
+    }
+
+    private int getRandomIndex() {
+        return random.nextInt(getIconArray().size());
     }
 
 
@@ -136,19 +140,56 @@ public class TouchView extends ConstraintLayout {
             itemDataArray = new ArrayList<>();
 
             int textCount = 0;
-            //目前先做五層
-            for (int j = 0; j < 5; j++) {
 
-                for (int i = 0; i < 5; i++) {
+            ArrayList<Integer> indexArray = new ArrayList<>();
+
+            for (int i = 0; i < 25; i++) {
+                int randomIndex = random.nextInt(getIconArray().size());
+                indexArray.add(randomIndex);
+                if (indexArray.size() <= 2) {
+                    continue;
+                }
+                for (int j = 0; j < indexArray.size(); j++) {
+                    if (j + 1 >= indexArray.size()) {
+                        break;
+                    }
+                    if (indexArray.get(j) == indexArray.get(j + 1)) {
+                        indexArray.remove(j + 1);
+                        i--;
+                        break;
+                    }
+                }
+
+            }
+
+            for (int i = 5; i < indexArray.size(); i++) {
+                if (indexArray.get(i) == indexArray.get(i - 5)) {
+                    int randomIndex = random.nextInt(getIconArray().size());
+                    if (i + 1 >= indexArray.size()){
+                        continue;
+                    }
+                    if (randomIndex == indexArray.get(i) || randomIndex == indexArray.get(i + 1)) {
+                        i--;
+                        continue;
+                    }
+                    indexArray.set(i, randomIndex);
+                }
+            }
+
+
+            //目前先做五層
+            for (int straightIndex = 0; straightIndex < 5; straightIndex++) {
+
+                for (int horizontalIndex = 0; horizontalIndex < 5; horizontalIndex++) {
+                    int randomIndex = indexArray.get(textCount);
                     textCount++;
                     itemView = LayoutInflater.from(getContext()).inflate(R.layout.item_layout, rootView, false);
                     ivIcon = itemView.findViewById(R.id.icon);
 
                     //隨機出現珠子
-                    int randomIndex = random.nextInt(getIconArray().size());
+                    MichaelLog.i("randomIndex ; " + randomIndex);
                     ivIcon.setImageResource(getIconArray().get(randomIndex));
 
-//
                     ConstraintLayout.LayoutParams params = new Constraints.LayoutParams((int) singleWidth, (int) singleHeight);
                     ConstraintLayout itemRoot = itemView.findViewById(R.id.item_root);
                     itemRoot.setLayoutParams(params);
@@ -162,31 +203,31 @@ public class TouchView extends ConstraintLayout {
                     data.setIvIcon(ivIcon);
                     data.setItemRoot(itemRoot);
                     data.setId(textCount);
-                    if (i == 0) {
+                    if (horizontalIndex == 0) {
                         itemView.setX(10f);
                         data.setLeftX(10f);
                         data.setRightX(10f + singleWidth);
                         float middleX = (((10f + singleWidth) - 10f) / 2f) + 10f;
                         data.setMiddleX(middleX);
                     } else {
-                        itemView.setX(singleWidth * i);
-                        data.setLeftX(singleWidth * i);
-                        data.setRightX(singleWidth * i + singleWidth);
-                        float middleX = (((singleWidth * i + singleWidth) - singleWidth * i) / 2f) + singleWidth * i;
+                        itemView.setX(singleWidth * horizontalIndex);
+                        data.setLeftX(singleWidth * horizontalIndex);
+                        data.setRightX(singleWidth * horizontalIndex + singleWidth);
+                        float middleX = (((singleWidth * horizontalIndex + singleWidth) - singleWidth * horizontalIndex) / 2f) + singleWidth * horizontalIndex;
                         data.setMiddleX(middleX);
                     }
-                    if (j == 0) {
+                    if (straightIndex == 0) {
                         data.setTopY(middleScreenY);
                         data.setBottomY(middleScreenY + singleHeight);
 
                         //畫面的
                         itemView.setY(middleScreenY);
                     } else {
-                        data.setTopY(middleScreenY + (singleHeight * j));
+                        data.setTopY(middleScreenY + (singleHeight * straightIndex));
                         data.setBottomY(data.getTopY() + singleHeight);
 
                         //畫面的
-                        itemView.setY(middleScreenY + (singleHeight * j));
+                        itemView.setY(middleScreenY + (singleHeight * straightIndex));
                     }
                     float middleY = ((data.getBottomY() - data.getTopY()) / 2f) + data.getTopY();
                     data.setMiddleY(middleY);
@@ -224,19 +265,14 @@ public class TouchView extends ConstraintLayout {
             });
 
 
-
-
-
-
             MichaelLog.i("maxBottomY : " + maxBottomY + " , maxRightX : " + maxRightX + " , array size : " + itemDataArray.size());
         }
     };
 
 
+    private TranslateAnimation getTranslateAnimation() {
 
-    private TranslateAnimation getTranslateAnimation(){
-
-        if (animation != null){
+        if (animation != null) {
             return animation;
         }
         animation = new TranslateAnimation(0f, 0f, -1000f, 0f);
@@ -262,7 +298,7 @@ public class TouchView extends ConstraintLayout {
                             break;
                         case MotionEvent.ACTION_MOVE:
 
-                            if (isStopMove){
+                            if (isStopMove) {
                                 return false;
                             }
                             sbSecondCount.setVisibility(VISIBLE);
@@ -276,20 +312,20 @@ public class TouchView extends ConstraintLayout {
                             MichaelLog.i("移動x : " + (event.getRawX() + x) + " , y : " + (event.getRawY() + y));
 
 
-                            if (secondCount <= 0){
+                            if (secondCount <= 0) {
                                 isStopMove = true;
                                 handler.removeCallbacks(startToCountRunnable);
 
-                                stopToMove(v,itemRoot);
+                                stopToMove(v, itemRoot);
 
                                 return false;
                             }
 
-    //////////
+                            //////////
                             //在移動的同時也判斷是否要換方格
                             checkNeedToMove(moveX, moveY, itemRoot.getId());
 
-                            if (isCalculating){
+                            if (isCalculating) {
                                 return false;
                             }
                             startToCountSixSecond();
@@ -297,13 +333,13 @@ public class TouchView extends ConstraintLayout {
                             break;
                         case MotionEvent.ACTION_UP:
                             MichaelLog.i("action Up 開始計算");
-                            if (isStopMove){
+                            if (isStopMove) {
                                 return false;
                             }
                             isStopMove = true;
                             isCalculating = true;
                             handler.removeCallbacks(startToCountRunnable);
-                            stopToMove(v,itemRoot);
+                            stopToMove(v, itemRoot);
 
                             break;
                         default:
@@ -317,7 +353,7 @@ public class TouchView extends ConstraintLayout {
         };
     }
 
-    private void stopToMove(View v, ConstraintLayout itemRoot){
+    private void stopToMove(View v, ConstraintLayout itemRoot) {
         isCalculating = true;
         sbSecondCount.setVisibility(GONE);
         int currentId = itemRoot.getId();
@@ -328,7 +364,7 @@ public class TouchView extends ConstraintLayout {
 
     private void startToCountSixSecond() {
         isCalculating = true;
-        handler.postDelayed(startToCountRunnable,100);
+        handler.postDelayed(startToCountRunnable, 100);
     }
 
 
@@ -337,7 +373,7 @@ public class TouchView extends ConstraintLayout {
         public void run() {
 
             secondCount = secondCount - 100;
-            MichaelLog.i("seekBar progress : "+secondCount);
+            MichaelLog.i("seekBar progress : " + secondCount);
             sbSecondCount.setProgress(secondCount);
 
             startToCountSixSecond();
@@ -459,7 +495,6 @@ public class TouchView extends ConstraintLayout {
                                     && itemDataArray.get(index).getItemRoot().getTag().equals(secondTag);
 
 
-
                             if (isSameIndex && isSameTag) {
                                 item.getItemIndexArray().add(i);
                                 item.getItemIndexArray().add(firstIndex);
@@ -556,8 +591,8 @@ public class TouchView extends ConstraintLayout {
                 indexArray.add(firstIndex);
                 indexArray.add(secondIndex);
 
-                if (rootTag.equals(thirdTag)){
-                  indexArray.add(thirdIndex);
+                if (rootTag.equals(thirdTag)) {
+                    indexArray.add(thirdIndex);
                 }
                 connectItem.setItemIndexArray(indexArray);
                 connectItemsArray.add(connectItem);
@@ -578,8 +613,6 @@ public class TouchView extends ConstraintLayout {
         }
 
 
-
-
         //開始刪除珠子
 
         handler.postDelayed(new Runnable() {
@@ -588,33 +621,30 @@ public class TouchView extends ConstraintLayout {
 
                 startToRemoveItem();
             }
-        },200);
+        }, 200);
 
     }
 
 
-
-
-
     //開始消除珠子
     private void startToRemoveItem() {
-        MichaelLog.i("開始消除珠子位置："+itemIndex);
+        MichaelLog.i("開始消除珠子位置：" + itemIndex);
         ConnectItem connectItem = connectItemsArray.get(itemIndex);
-        for (Integer index : connectItem.getItemIndexArray()){
-            MichaelLog.i("被消除的位置："+index);
+        for (Integer index : connectItem.getItemIndexArray()) {
+            MichaelLog.i("被消除的位置：" + index);
             rootView.removeView(itemDataArray.get(index).getItemRoot());
         }
-        itemIndex ++;
+        itemIndex++;
 
-        MichaelLog.i("removeIndex : "+removeItemIndex);
+        MichaelLog.i("removeIndex : " + removeItemIndex);
         maskListener.onShowCombo(removeItemIndex + "Combo !!");
-        removeItemIndex ++;
+        removeItemIndex++;
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
 
 
-                if (itemIndex >= connectItemsArray.size()){
+                if (itemIndex >= connectItemsArray.size()) {
 
                     startToAddView();
                     itemIndex = 0;
@@ -622,14 +652,15 @@ public class TouchView extends ConstraintLayout {
                 }
                 startToRemoveItem();
             }
-        },500);
+        }, 500);
 
     }
+
     //開始產生珠子
     private void startToAddView() {
         //把蒐集到的index都交給 indexRecorderArray
-        for (ConnectItem item : connectItemsArray){
-            if (item == null){
+        for (ConnectItem item : connectItemsArray) {
+            if (item == null) {
                 continue;
             }
             indexRecorderArray.addAll(item.getItemIndexArray());
@@ -1126,7 +1157,7 @@ public class TouchView extends ConstraintLayout {
         this.maskListener = onShowMaskListener;
     }
 
-    public interface OnShowMaskListener{
+    public interface OnShowMaskListener {
         void onShow(boolean isShow);
 
 
